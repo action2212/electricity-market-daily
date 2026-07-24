@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电力市场每日动态</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f0;
+    color: #2c2c2a;
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: #1a3a2a;
+    color: #e8efe8;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .sidebar-header h1 {
+    font-size: 15px;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+
+  .sidebar-header p {
+    font-size: 12px;
+    color: #a0c4a8;
+    margin-top: 4px;
+  }
+
+  .sidebar-status {
+    padding: 12px 20px;
+    font-size: 12px;
+    color: #7ddb8d;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    background: #7ddb8d;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .report-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .report-item {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-left: 3px solid transparent;
+    font-size: 13px;
+    color: #c8d8c8;
+  }
+
+  .report-item:hover {
+    background: rgba(255,255,255,0.06);
+  }
+
+  .report-item.active {
+    background: rgba(125,219,141,0.12);
+    border-left-color: #7ddb8d;
+    color: #fff;
+  }
+
+  .report-item .date {
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .report-item .day {
+    font-size: 11px;
+    color: #7a9a7a;
+    margin-top: 2px;
+  }
+
+  .report-item.active .day {
+    color: #a0c4a8;
+  }
+
+  .report-item .today-badge {
+    display: inline-block;
+    background: #3d8b40;
+    color: #fff;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .report-item .tag {
+    display: inline-block;
+    background: rgba(125,219,141,0.2);
+    color: #7ddb8d;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .sidebar-footer {
+    padding: 12px 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 11px;
+    color: #7a9a7a;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebar-footer a {
+    color: #a0c4a8;
+    text-decoration: none;
+    font-size: 11px;
+  }
+
+  .sidebar-footer a:hover {
+    text-decoration: underline;
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 40px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .toolbar {
+    width: 100%;
+    max-width: 860px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .search-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .search-input {
+    flex: 1;
+    padding: 9px 16px;
+    font-size: 13px;
+    border: 0.5px solid #c8d8c8;
+    border-radius: 8px;
+    background: #fff;
+    color: #2c2c2a;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-input:focus {
+    border-color: #3d8b40;
+  }
+
+  .search-input::placeholder {
+    color: #a0b0a0;
+  }
+
+  .search-clear {
+    display: none;
+    padding: 7px 16px;
+    font-size: 12px;
+    border: 0.5px solid #c8d8c8;
+    border-radius: 8px;
+    background: #fff;
+    color: #7a8a7a;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .search-clear.visible {
+    display: inline-block;
+  }
+
+  .search-clear:hover {
+    background: #f5f5f0;
+  }
+
+  .filter-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-tag {
+    padding: 5px 14px;
+    font-size: 12px;
+    border: 0.5px solid #c8d8c8;
+    border-radius: 16px;
+    background: #fff;
+    color: #5a6a5a;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .filter-tag:hover {
+    background: #e8f0e8;
+    border-color: #8ab88a;
+  }
+
+  .filter-tag.active {
+    background: #1a3a2a;
+    color: #fff;
+    border-color: #1a3a2a;
+  }
+
+  .filter-count {
+    font-size: 12px;
+    color: #7a8a7a;
+    margin-left: 6px;
+  }
+
+  /* ===== 内容区域 ===== */
+  .content {
+    width: 100%;
+    max-width: 860px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px 36px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .content h1 {
+    font-size: 20px;
+    font-weight: 500;
+    color: #1a3a2a;
+    margin-bottom: 4px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e8efe8;
+  }
+
+  .content h2 {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1a3a2a;
+    margin: 28px 0 12px;
+    padding-left: 10px;
+    border-left: 3px solid #3d8b40;
+  }
+
+  .content h3 {
+    font-size: 14px;
+    font-weight: 500;
+    color: #3a5a3a;
+    margin: 20px 0 8px;
+  }
+
+  .content p {
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #3a4a3a;
+  }
+
+  .content blockquote {
+    margin: 8px 0 20px;
+    padding: 12px 16px;
+    background: #f0f7f0;
+    border-left: 3px solid #7ddb8d;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    color: #3a5a3a;
+  }
+
+  .content ul, .content ol {
+    margin: 8px 0 16px;
+    padding-left: 20px;
+  }
+
+  .content li {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: #3a4a3a;
+    line-height: 1.7;
+  }
+
+  .content li strong {
+    color: #1a3a2a;
+  }
+
+  .content hr {
+    margin: 28px 0;
+    border: none;
+    border-top: 1px solid #e8efe8;
+  }
+
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 13px;
+  }
+
+  .content th {
+    background: #f0f7f0;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+    color: #1a3a2a;
+    border-bottom: 1px solid #c8d8c8;
+  }
+
+  .content td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e8efe8;
+    color: #3a4a3a;
+  }
+
+  .content tr:hover td {
+    background: #fafcfa;
+  }
+
+  .content a {
+    color: #3d8b40;
+    text-decoration: none;
+  }
+
+  .content a:hover {
+    text-decoration: underline;
+  }
+
+  .content .source-tag {
+    display: inline-block;
+    font-size: 11px;
+    color: #7a8a7a;
+    background: #f0f0ea;
+    padding: 1px 8px;
+    border-radius: 3px;
+    margin-left: 4px;
+  }
+
+  /* 热度标记 */
+  .hot-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 500;
+    vertical-align: middle;
+  }
+
+  .hot-badge.hot-3 { background: #fce4e4; color: #c62828; }
+  .hot-badge.hot-2 { background: #fef3e4; color: #e65100; }
+  .hot-badge.hot-1 { background: #f0f7f0; color: #3d8b40; }
+
+  .content .section-hidden { display: none !important; }
+  .content .item-hidden { display: none !important; }
+  .content .search-highlight { background: #fdf2d0; border-radius: 2px; padding: 0 2px; }
+
+  /* ===== 空状态 ===== */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: #7a8a7a;
+  }
+
+  .empty-state svg {
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .empty-state p {
+    font-size: 14px;
+    color: #5a6a5a;
+  }
+
+  .meta-bar {
+    font-size: 12px;
+    color: #7a8a7a;
+    margin-bottom: 20px;
+  }
+
+  /* ===== 底部信息 ===== */
+  .report-footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #e8efe8;
+    font-size: 12px;
+    color: #7a8a7a;
+    line-height: 1.8;
+  }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; min-width: unset; max-height: 220px; }
+    .main { padding: 16px 12px 20px; }
+    .content { padding: 20px 16px; }
+    .toolbar { padding: 0; }
+    .filter-tags { gap: 4px; }
+    .filter-tag { padding: 4px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>电力市场每日动态</h1>
+    <p>每日 8:00 自动更新</p>
+  </div>
+  <div class="sidebar-status">
+    <span class="status-dot"></span> 自动化运行中
+  </div>
+  <div class="report-list" id="reportList">
+    <div class="empty-state" style="padding:40px 20px;">
+      <p style="font-size:12px;color:#7a9a7a;">加载中...</p>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <span>WorkBuddy 自动化生成</span>
+    <span>数据来源：官方公开信息</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <div class="search-bar">
+      <input class="search-input" id="searchInput" type="text" placeholder="搜索关键词...（如：现货市场 储能 电价）">
+      <button class="search-clear" id="searchClear">清除</button>
+    </div>
+    <div class="filter-tags" id="filterTags">
+      <span class="filter-tag active" data-cat="all">全部</span>
+      <span class="filter-tag" data-cat="政策法规">政策法规</span>
+      <span class="filter-tag" data-cat="交易规则">交易规则</span>
+      <span class="filter-tag" data-cat="市场动态">市场动态</span>
+      <span class="filter-tag" data-cat="储能发展">储能发展</span>
+      <span class="filter-tag" data-cat="行业事件">行业事件</span>
+      <span class="filter-count" id="filterCount"></span>
+    </div>
+  </div>
+  <div class="content" id="content">
+    <div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#7a8a7a" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <line x1="8" y1="8" x2="16" y2="8"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+        <line x1="8" y1="16" x2="12" y2="16"/>
+      </svg>
+      <p>选择左侧日期查看简报</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script>
+let activeCategory = 'all';
+let searchQuery = '';
+
+function getSectionCategory(h2El) {
+  const text = h2El.textContent.trim();
+  if (text.includes('政策法规') || text.includes('政策')) return '政策法规';
+  if (text.includes('交易规则') || text.includes('规则') || text.includes('中长期')) return '交易规则';
+  if (text.includes('市场动态') || text.includes('市场') || text.includes('现货')) return '市场动态';
+  if (text.includes('储能') || text.includes('新能源') || text.includes('新型')) return '储能发展';
+  if (text.includes('行业事件') || text.includes('事件') || text.includes('企业')) return '行业事件';
+  if (text.includes('今日要闻') || text.includes('要闻') || text.includes('数据')) return '要闻';
+  if (text.includes('周度') || text.includes('月度')) return '综述';
+  return null;
+}
+
+function applyFilters() {
+  const contentEl = document.getElementById('content');
+  const h2s = contentEl.querySelectorAll('h2');
+  const allItems = contentEl.querySelectorAll('li, p, tr');
+  let visibleCount = 0;
+
+  allItems.forEach(el => {
+    el.classList.remove('item-hidden', 'search-highlight');
+    const highlights = el.querySelectorAll('.search-highlight');
+    highlights.forEach(h => {
+      h.replaceWith(h.textContent);
+    });
+  });
+
+  h2s.forEach(h2 => {
+    let section = h2.nextElementSibling;
+    const sectionElements = [];
+
+    while (section && section.tagName !== 'H2' && section.tagName !== 'HR') {
+      if (section.tagName === 'UL' || section.tagName === 'OL') {
+        section.querySelectorAll('li').forEach(li => sectionElements.push(li));
+      } else if (section.tagName === 'P' || section.tagName === 'BLOCKQUOTE' || section.tagName === 'TABLE') {
+        sectionElements.push(section);
+      }
+      section = section.nextElementSibling;
+    }
+
+    const cat = getSectionCategory(h2);
+    let sectionVisible = false;
+    let sectionHasMatch = false;
+
+    if (activeCategory !== 'all' && cat !== activeCategory && cat !== '要闻') {
+      h2.classList.add('section-hidden');
+    } else {
+      h2.classList.remove('section-hidden');
+      sectionVisible = true;
+    }
+
+    sectionElements.forEach(el => {
+      const text = el.textContent.toLowerCase();
+      let itemVisible = true;
+
+      if (searchQuery) {
+        const terms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+        const matches = terms.every(t => text.includes(t));
+        if (!matches) {
+          el.classList.add('item-hidden');
+          itemVisible = false;
+        } else {
+          sectionHasMatch = true;
+          if (sectionVisible) visibleCount++;
+        }
+      } else if (sectionVisible) {
+        sectionHasMatch = true;
+        visibleCount++;
+      }
+
+      if (itemVisible && sectionVisible) {
+        el.classList.remove('item-hidden');
+      }
+    });
+
+    if (sectionVisible && searchQuery && !sectionHasMatch) {
+      h2.classList.add('section-hidden');
+    }
+
+    if (sectionVisible && searchQuery && sectionHasMatch) {
+      sectionElements.forEach(el => {
+        if (!el.classList.contains('item-hidden')) {
+          const terms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+          terms.forEach(t => {
+            const regex = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            el.innerHTML = el.innerHTML.replace(
+              new RegExp(`(?<!<[^>]*)${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![^<]*>)`, 'gi'),
+              '<span class="search-highlight">$&</span>'
+            );
+          });
+        }
+      });
+    }
+  });
+
+  document.getElementById('filterCount').textContent =
+    (searchQuery || activeCategory !== 'all') ? `${visibleCount} 条` : '';
+}
+
+function setCategory(cat) {
+  activeCategory = cat;
+  document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.filter-tag[data-cat="${cat}"]`).classList.add('active');
+  applyFilters();
+}
+
+document.getElementById('searchInput').addEventListener('input', function(e) {
+  searchQuery = e.target.value;
+  const clearBtn = document.getElementById('searchClear');
+  searchQuery ? clearBtn.classList.add('visible') : clearBtn.classList.remove('visible');
+  applyFilters();
+});
+
+document.getElementById('searchClear').addEventListener('click', function() {
+  document.getElementById('searchInput').value = '';
+  searchQuery = '';
+  this.classList.remove('visible');
+  applyFilters();
+});
+
+document.getElementById('filterTags').addEventListener('click', function(e) {
+  if (e.target.classList.contains('filter-tag')) {
+    setCategory(e.target.dataset.cat);
+  }
+});
+
+async function loadReports() {
+  const resp = await fetch('reports/manifest.json');
+  const files = await resp.json();
+  const links = files.filter(f => f.endsWith('.md')).sort().reverse();
+
+  const listEl = document.getElementById('reportList');
+
+  if (links.length === 0) {
+    listEl.innerHTML = '<div class="empty-state" style="padding:40px 20px;"><p style="font-size:12px;color:#7a9a7a;">暂无简报</p></div>';
+    return [];
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  listEl.innerHTML = links.map(file => {
+    const dateMatch = file.match(/(\d{4}-\d{2}-\d{2})/);
+    const date = dateMatch ? dateMatch[1] : file;
+    const isToday = date === today;
+    const dayNames = ['日','一','二','三','四','五','六'];
+    const d = new Date(date + 'T00:00:00+08:00');
+    const dayName = `周${dayNames[d.getDay()]}`;
+    const isWeekly = file.includes('周度');
+    const isMonthly = file.includes('月度');
+    let extraTag = '';
+    if (isWeekly) extraTag = '<span class="tag">周</span>';
+    if (isMonthly) extraTag = '<span class="tag">月</span>';
+
+    return `<div class="report-item${isToday ? ' active' : ''}" data-file="${file}">
+      <span class="date">${date}</span>${extraTag}${isToday ? '<span class="today-badge">今天</span>' : ''}
+      <div class="day">${dayName}</div>
+    </div>`;
+  }).join('');
+
+  listEl.querySelectorAll('.report-item').forEach(item => {
+    item.addEventListener('click', () => {
+      listEl.querySelectorAll('.report-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      loadContent(item.dataset.file);
+    });
+  });
+
+  return links;
+}
+
+async function loadContent(file) {
+  const contentEl = document.getElementById('content');
+  contentEl.innerHTML = '<div class="empty-state"><p>加载中...</p></div>';
+
+  try {
+    const resp = await fetch('reports/' + file);
+    const md = await resp.text();
+    const html = marked.parse(md);
+    contentEl.innerHTML = html;
+
+    document.getElementById('toolbar').style.display = 'flex';
+    searchQuery = document.getElementById('searchInput').value;
+    applyFilters();
+  } catch (e) {
+    contentEl.innerHTML = '<div class="empty-state"><p>加载失败，请稍后重试</p></div>';
+  }
+}
+
+(async () => {
+  const links = await loadReports();
+  if (links.length > 0) {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayFile = links.find(f => f.includes(today));
+    loadContent(todayFile || links[0]);
+  }
+})();
+</script>
+
+</body>
+</html>
