@@ -632,7 +632,7 @@ document.getElementById('filterTags').addEventListener('click', function(e) {
 });
 
 async function loadReports() {
-  const resp = await fetch('reports/manifest.json');
+  const resp = await fetch('reports/manifest.json?v=' + Date.now());
   const files = await resp.json();
   const links = files.filter(f => f.endsWith('.md')).sort().reverse();
 
